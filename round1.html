@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeopardy Round 1</title>
+<style>
+/* ====== PAGE ====== */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+  background-image: url('image/1.jpg');
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: -1;
+}
+h1 {
+  text-align: center;
+  padding: 20px;
+  font-family: 'Lucida Console', Courier, monospace;
+  text-shadow: 2px 2px 5px #000;
+}
+/* ====== SCOREBOARD ====== */
+.scoreboard {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+.team {
+  background: forestgreen;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 150px;
+}
+.team h3 {
+  margin: 0 0 10px;
+  font-size: 1.2em;
+}
+.score {
+  font-size: 2em;
+}
+.score-controls button {
+  margin: 5px;
+  padding: 5px 10px;
+  font-size: 1em;
+  background-color: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.score-controls button:hover {
+  background-color: #e68900;
+}
+/* ====== GRID ====== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);          /* было 5 → теперь 4 */
+  gap: 20px;
+  padding: 10px;
+  justify-items: center;
+}
+/* ====== CATEGORY ====== */
+.category {
+  background: rgba(0,0,0,0.7);
+  padding: 20px 10px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 40px;
+  font-size: 1.1em;
+  text-transform: uppercase;
+  box-shadow: 0 0 5px #000;
+  width: 130px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid #002868;
+}
+/* ====== QUESTION BUTTON ====== */
+.question {
+  position: relative;
+  width: 130px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid #002868;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 50px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 6px #000;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,0.35),
+    0 6px 10px rgba(0,0,0,0.6);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 0;
+}
+/* FLAGS */
+.question:nth-child(odd) {
+  background-image: url("image/ukflag.jpg");
+}
+.question:nth-child(even) {
+  background-image: url("image/usaflag.jpg");
+}
+/* dark overlay */
+.question::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  border-radius: 50px;
+  z-index: 1;
+}
+/* text above overlay */
+.question span {
+  position: relative;
+  z-index: 2;
+  font-weight: bold;
+}
+/* hover */
+.question:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,0.35),
+    0 12px 20px rgba(0,0,0,0.7);
+}
+/* used */
+.question.used {
+  background: #555 !important;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+/* ====== POPUP ====== */
+.popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  justify-content: center;
+  align-items: center;
+}
+.popup-content {
+  background: #111;
+  padding: 25px;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 0 20px #000;
+}
+.timer {
+  font-size: 2em;
+  margin: 10px 0;
+}
+#questionText, #answerText {
+  font-size: 35px;
+  line-height: 1.5;
+  color: yellow;
+}
+.answer {
+  display: none;
+  margin-top: 20px;
+  color: yellow;
+}
+.answer img {
+  max-width: 65%;
+  height: auto;
+  border-radius: 10px;
+  margin-top: 10px;
+  box-shadow: 0 0 10px #000;
+}
+button {
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  padding: 10px 15px;
+  margin-top: 10px;
+  background-color: #2196f3;
+  color: #fff;
+  font-size: 1em;
+  transition: 0.3s;
+}
+button:hover {
+  background-color: #2196f3;
+}
+#questionText blockquote,
+#answerText blockquote {
+  margin: 10px 0;
+  padding-left: 15px;
+  border-left: 3px solid #ff9800;
+  font-style: italic;
+  color: #fff;
+}
+/* Next button */
+.next-btn {
+  display: block;
+  margin: 30px auto;
+  background-color: forestgreen;
+  font-size: 1.2em;
+  padding: 10px 100px;
+}
+.next-btn:hover {
+  background-color: #45a049;
+}
+</style>
+</head>
+<body>
+<h1>Round 1 - Jeopardy</h1>
+
+<!-- SCOREBOARD -->
+<div class="scoreboard">
+  <div class="team">
+    <h3>Team 1</h3>
+    <div class="score" id="score1">0</div>
+    <div class="score-controls">
+      <button onclick="changeScore(1,1)">+1</button>
+      <button onclick="changeScore(1,-1)">-1</button>
+    </div>
+  </div>
+  <div class="team">
+    <h3>Team 2</h3>
+    <div class="score" id="score2">0</div>
+    <div class="score-controls">
+      <button onclick="changeScore(2,1)">+1</button>
+      <button onclick="changeScore(2,-1)">-1</button>
+    </div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid" id="grid"></div>
+
+<!-- POPUP -->
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <h2 id="popupTitle"></h2>
+    <div class="timer" id="timer">45</div>
+    <button onclick="startTimer()">Start Timer</button>
+    <p id="questionText">Question text</p>
+    <button onclick="showAnswer()">Show the answer</button>
+    <div class="answer" id="answer">
+      <p id="answerText">Answer text</p>
+      <img id="answerImage" src="" alt="">
+    </div>
+    <button onclick="closePopup()">Close</button>
+  </div>
+</div>
+
+<!-- Next -->
+<a href="round2.html"><button class="next-btn">Next</button></a>
+
+<script>
+// Categories (без Music)
+const categories = ["Famous People", "Books", "Movies", "Sights"];
+
+// Questions (без Music)
+const questions = [
+  // People
+  [
+    {category: "People", number: 1, question: "Who was the first President of the United States and a key leader of the American Revolution?", answer: "George Washington", image: "image/people/george_washington.jpg"},
+       {category: "People", number: 2, question: "Who was the longest-reigning monarch in British history, ruling for over 70 years?", answer: "Queen Elizabeth II", image: "image/people/elizabeth_2.jpg"},
+    {category: "People", number: 3, question: "Which British author wrote the famous book series about The Boy Who Lived?", answer: "J.K. Rowling", image: "image/people/jk_rowling.jpg"},
+    {category: "People", number: 4, question: "Which British poet and playwright wrote the saddest love stories in the world?", answer: "William Shakespeare", image: "image/people/shakespeare.jpg"}
+      ],
+  // Books
+  [
+    {category: "Books", number: 1, question: "Which epic fantasy novel tells the story of a magical ring and the fight against evil in Middle-earth?", answer: "The Lord of the Rings", image: "image/books/lotr.jpg"},
+    {category: "Books", number: 2, question: "Which famous tragic love story follows two young lovers whose families are enemies?", answer: "Romeo and Juliet", image: "image/books/romeo_juliet.jpg"},
+    {category: "Books", number: 3, question: "Which book series features a brilliant detective living at 221B Baker Street in London?", answer: "Sherlock Holmes", image: "image/books/sherlock.jpg"},
+    {category: "Books", number: 4, question: "Which horror novel tells the story of a shape-shifting creature that often appears as a clown?", answer: "It", image: "image/books/it.jpg"}
+    
+  ],
+  // Movies
+  [
+    {category: "Movies", number: 1, question: "A young man and woman from different social classes meet and fall in love on a luxurious ship. Their love faces a terrible test when the ship hits an iceberg.<blockquote>I'm the king of the world!</blockquote>", answer: "Titanic", image: "image/movies/titanic.jpg"},
+    {category: "Movies", number: 2, question: "A grumpy green unusual main hero goes on an adventure to save a princess. Along the way, he meets a chattering donkey and discovers that appearances aren’t everything.<blockquote>Are we there yet? - No.<br>Are we there now? - Yes.<br>Honestly? - NO!!!</blockquote>", answer: "Shrek", image: "image/movies/shrek.jpg"},
+   
+    {category: "Movies", number: 3, question: "In a galaxy far, far away, a young hero joins a rebellion to fight an oppressive empire. The story features lightsabers, space battles, and the struggle between good and evil.<blockquote>Join the dark side</blockquote>", answer: "Star Wars", image: "image/movies/star_wars.jpg"},
+    
+    {category: "Movies", number: 4, question: "In a dystopian society, teenagers from different districts are forced to fight to the death on live television. A brave girl volunteers to save her sister and challenges the oppressive regime.<blockquote>Happy ... Games to you and may luck always be with you</blockquote>", answer: "The Hunger Games", image: "image/movies/hunger_games.jpg"}
+  ],
+  // Landmarks (ранее Places)
+  [
+    {category: "Places", number: 1, question: "This famous place in Los Angeles is known as the heart of the American film industry, where stars and movie studios are located.", answer: "Hollywood", image: "image/places/hollywood.jpg"},
+        {category: "Places", number: 2, question: "This colossal statue stands in New York and is a symbol of freedom and democracy. It welcomes visitors arriving by sea to a major American city.", answer: "Statue of Liberty", image: "image/places/statue_of_liberty.jpg"},
+    {category: "Places", number: 3, question: "This famous residence in Washington D.C. serves as the official home and workplace of the President of the United States.", answer: "The White House", image: "image/places/white_house.jpg"},
+    {category: "Places", number: 4, question: "This royal palace in London is the official residence of the British monarch. Visitors often gather outside to watch the changing of the guard.", answer: "Buckingham Palace", image: "image/places/buckingham_palace.jpg"}
+   
+  ]
+];
+
+// Build grid
+const grid = document.getElementById("grid");
+
+categories.forEach(cat => {
+  const c = document.createElement("div");
+  c.className = "category";
+  c.textContent = cat;
+  grid.appendChild(c);
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  const team1Name = localStorage.getItem("team1Name") || "Team 1";
+  const team2Name = localStorage.getItem("team2Name") || "Team 2";
+  document.querySelectorAll(".team")[0].querySelector("h3").textContent = team1Name;
+  document.querySelectorAll(".team")[1].querySelector("h3").textContent = team2Name;
+});
+
+for (let i = 0; i < 4; i++) {
+  categories.forEach((cat, ci) => {
+    const q = document.createElement("div");
+    q.className = "question";
+    q.innerHTML = `<span>${i+1}</span>`;
+    q.onclick = () => openQuestion(q, questions[ci][i]);
+    grid.appendChild(q);
+  });
+}
+
+// Score
+function changeScore(team, delta){
+  const el = document.getElementById("score"+team);
+  el.textContent = parseInt(el.textContent) + delta;
+}
+
+// Popup
+let timerInterval;
+let timeLeft = 45;
+
+function openQuestion(el, data){
+  if(el.classList.contains("used")) return;
+  el.classList.add("used");
+  document.getElementById("popupTitle").textContent = `${data.category} – Question ${data.number}`;
+  document.getElementById("questionText").innerHTML = data.question;
+  document.getElementById("answerText").innerHTML = data.answer;
+  document.getElementById("answerImage").src = data.image;
+  document.getElementById("answer").style.display = "none";
+  document.getElementById("timer").textContent = "45";
+  timeLeft = 45;
+  document.getElementById("popup").style.display = "flex";
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    document.getElementById("timer").textContent = timeLeft;
+    if(timeLeft <= 0) clearInterval(timerInterval);
+  },1000);
+}
+
+function showAnswer(){
+  document.getElementById("answer").style.display = "block";
+}
+
+function closePopup(){
+  clearInterval(timerInterval);
+  document.getElementById("popup").style.display = "none";
+}
+</script>
+</body>
+</html>

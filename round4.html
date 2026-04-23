@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Round 4 — Quest</title>
+<style>
+/* ====== PAGE ====== */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+  background-image: url('image/1.jpg');
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: -1;
+}
+h1 {
+  text-align: center;
+  padding: 20px;
+  font-family: 'Lucida Console', Courier, monospace;
+  text-shadow: 2px 2px 5px #000;
+}
+
+/* ====== SCOREBOARD ====== */
+.teams {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+.team-btn {
+  background: forestgreen;
+  padding: 15px 25px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 160px;
+}
+.team-btn div:first-child {
+  font-size: 1.3em;
+  margin-bottom: 8px;
+}
+.score {
+  font-size: 2.2em;
+  margin: 8px 0;
+}
+.score-controls button {
+  margin: 4px;
+  padding: 6px 14px;
+  font-size: 1em;
+  background-color: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.score-controls button:hover {
+  background-color: #e68900;
+}
+
+/* ====== GRID (5 колонок) ====== */
+.list {
+  max-width: 1300px;
+  margin: 0 auto 40px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  padding: 10px;
+  justify-items: center;
+}
+
+/* ====== QUESTION BUTTONS ====== */
+.statement {
+  position: relative;
+  width: 180px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1.7em;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 6px #000;
+   border: 5px solid #002868;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,0.35),
+    0 6px 10px rgba(0,0,0,0.6);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 0;
+}
+
+/* чередование флагов */
+.list .statement:nth-child(odd)  { background-image: url("image/ukflag.jpg"); }
+.list .statement:nth-child(even) { background-image: url("image/usaflag.jpg"); }
+
+/* тёмный оверлей */
+.statement::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  border-radius: 50px;
+  z-index: 1;
+}
+
+/* текст поверх оверлея */
+.statement span {
+  position: relative;
+  z-index: 2;
+}
+
+/* hover */
+.statement:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,0.35),
+    0 12px 20px rgba(0,0,0,0.7);
+}
+
+/* использованный */
+.statement.used {
+  background: #555 !important;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+
+
+/* ====== POPUP ====== */
+.popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+.popup-content {
+  background: #111;
+  padding: 30px;
+  width: 90%;
+  max-width: 720px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 0 25px #000;
+}
+#questionText {
+  font-size: 28px;
+  line-height: 1.45;
+  color: yellow;
+  margin: 20px 0;
+  white-space: pre-line;
+}
+#answer {
+  font-size: 26px;
+  color: #fff;
+  margin: 25px 0;
+  display: none;
+}
+#answer img {
+  margin-top: 20px;
+  max-width: 65%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.7);
+}
+button {
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  padding: 12px 24px;
+  margin: 12px 8px;
+  background-color: #2196f3;
+  color: #fff;
+  font-size: 1.1em;
+  transition: background 0.2s;
+}
+button:hover {
+  background-color: #1e88e5;
+}
+
+</style>
+</head>
+<body>
+
+<h1>Round 4 — Quest</h1>
+
+<!-- TEAMS -->
+<div class="teams">
+  <div class="team-btn">
+    <div id="team1Name">Team 1</div>
+    <div class="score" id="score1">0</div>
+    <div class="score-controls">
+      <button onclick="changeScore(1,1)">+1</button>
+      <button onclick="changeScore(1,-1)">-1</button>
+    </div>
+  </div>
+  <div class="team-btn">
+    <div id="team2Name">Team 2</div>
+    <div class="score" id="score2">0</div>
+    <div class="score-controls">
+      <button onclick="changeScore(2,1)">+1</button>
+      <button onclick="changeScore(2,-1)">-1</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUESTIONS GRID -->
+<div class="list" id="list"></div>
+
+
+<!-- POPUP -->
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <p id="questionText"></p>
+    <div class="answer-buttons">
+      <button onclick="showAnswer()">Show Answer</button>
+    </div>
+    <div id="answer"></div>
+    <button onclick="closePopup()">Close</button>
+  </div>
+</div>
+
+
+
+<script>
+// TEAM NAMES + SCORES
+document.getElementById("team1Name").textContent = localStorage.getItem("team1Name") || "Team 1";
+document.getElementById("team2Name").textContent = localStorage.getItem("team2Name") || "Team 2";
+
+let score1 = Number(localStorage.getItem("score1")) || 0;
+let score2 = Number(localStorage.getItem("score2")) || 0;
+document.getElementById("score1").textContent = score1;
+document.getElementById("score2").textContent = score2;
+
+function changeScore(team, delta) {
+  if (team === 1) {
+    score1 += delta;
+    document.getElementById("score1").textContent = score1;
+    localStorage.setItem("score1", score1);
+  } else {
+    score2 += delta;
+    document.getElementById("score2").textContent = score2;
+    localStorage.setItem("score2", score2);
+  }
+}
+
+// QUEST DATA
+const data = [
+  { text: `"Remember, remember the fifth of November,\nA masked face hides a revenge forever.\nIn London’s shadows, where freedom is dead,\nThe Alphabeth letter  will guide you ahead."`, answer: "Book “V for Vendetta”", img:"image/vendetta.jpg" },
+
+  { text: `"In city streets, where shadows blend,\nA hero rises, darkness to end.\nCape and Batcowl, he strikes at night,\nThe statue will point you to the next sight."`, answer: "Batman", img:"image/batman.jpg" },
+  
+  { text: `"Bohemian tunes and stadium cheers,\nA band that rocked through the years.\nFind the music that rules the land,\nYour next clue rests in the band’s hand."`, answer: "Queen", img:"image/queen.jpg" },
+    
+  { text: `"Famous for speeches and a space-bound goal,\nHe guided a country and inspired the soul.\nIn Dallas one day, history changed the view,\nGuess the president — can you?"`, answer: "John Kennedy", img:"image/kennedy.jpg" },
+ ];
+
+// BUILD GRID
+const list = document.getElementById("list");
+data.forEach((item, i) => {
+  const div = document.createElement("div");
+  div.className = "statement";
+  div.innerHTML = `<span>Quest ${i+1}</span>`;
+  div.onclick = () => openQuestion(div, i);
+  list.appendChild(div);
+});
+
+let current = 0;
+
+function openQuestion(el, index) {
+  if (el.classList.contains("used")) return;
+  el.classList.add("used");
+
+  current = index;
+  document.getElementById("questionText").textContent = data[index].text;
+  document.getElementById("answer").style.display = "none";
+  document.getElementById("popup").style.display = "flex";
+}
+
+function showAnswer() {
+  const ansDiv = document.getElementById("answer");
+  const q = data[current];
+  ansDiv.style.display = "block";
+  ansDiv.innerHTML = `<b>${q.answer}</b><br>${q.img ? `<img src="${q.img}" alt="${q.answer}">` : ""}`;
+}
+
+function closePopup() {
+  document.getElementById("popup").style.display = "none";
+}
+
+// BIG BUTTON
+document.getElementById("bigQuestionBtn").onclick = () => {
+  document.getElementById("questionText").textContent = "Here is the secret phrase for the team:";
+  document.getElementById("answer").style.display = "block";
+  document.getElementById("answer").innerHTML = "<b>The soul of culture shines through history, art, music, and literature.</b>";
+  document.getElementById("popup").style.display = "flex";
+};
+</script>
+</body>
+</html>
