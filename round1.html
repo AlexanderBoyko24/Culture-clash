@@ -66,7 +66,7 @@ h1 {
 /* ====== GRID ====== */
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);          /* было 5 → теперь 4 */
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
   padding: 10px;
   justify-items: center;
@@ -155,6 +155,7 @@ h1 {
   background: rgba(0,0,0,0.8);
   justify-content: center;
   align-items: center;
+  z-index: 100;
 }
 .popup-content {
   background: #111;
@@ -219,6 +220,51 @@ button:hover {
 .next-btn:hover {
   background-color: #45a049;
 }
+
+/* ====== MUSIC BUTTON ====== */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+#playMusicBtn {
+  background-color: #9c27b0;
+  display: none; /* hidden by default, shown only for music questions */
+  align-items: center;
+  gap: 8px;
+  font-size: 1em;
+  padding: 10px 18px;
+  border-radius: 8px;
+  transition: background-color 0.3s, transform 0.15s;
+}
+#playMusicBtn:hover {
+  background-color: #7b1fa2;
+  transform: scale(1.05);
+}
+#playMusicBtn.playing {
+  background-color: #e53935;
+}
+#playMusicBtn.playing:hover {
+  background-color: #b71c1c;
+}
+
+/* Music note pulse animation */
+@keyframes pulse-note {
+  0%   { transform: scale(1);   }
+  50%  { transform: scale(1.3); }
+  100% { transform: scale(1);   }
+}
+.note-icon {
+  display: inline-block;
+  font-size: 1.2em;
+}
+#playMusicBtn.playing .note-icon {
+  animation: pulse-note 0.6s infinite;
+}
 </style>
 </head>
 <body>
@@ -254,7 +300,15 @@ button:hover {
     <div class="timer" id="timer">45</div>
     <button onclick="startTimer()">Start Timer</button>
     <p id="questionText">Question text</p>
-    <button onclick="showAnswer()">Show the answer</button>
+
+    <!-- Action buttons row: Play Music + Show Answer -->
+    <div class="action-buttons">
+      <button id="playMusicBtn" onclick="toggleMusic()">
+        <span class="note-icon">🎵</span> <span id="musicBtnLabel">Play Music</span>
+      </button>
+      <button onclick="showAnswer()">Show the answer</button>
+    </div>
+
     <div class="answer" id="answer">
       <p id="answerText">Answer text</p>
       <img id="answerImage" src="" alt="">
@@ -263,50 +317,56 @@ button:hover {
   </div>
 </div>
 
+<!-- Hidden audio element -->
+<audio id="musicPlayer" preload="none"></audio>
+
 <!-- Next -->
 <a href="round2.html"><button class="next-btn">Next</button></a>
 
 <script>
-// Categories (без Music)
-const categories = ["Famous People", "Books", "Movies", "Sights"];
+// ====== CATEGORIES (5, including Music) ======
+const categories = ["Famous People", "Books", "Movies", "Sights", "Music"];
 
-// Questions (без Music)
+// ====== QUESTIONS ======
 const questions = [
   // People
   [
-    {category: "People", number: 1, question: "Who was the first President of the United States and a key leader of the American Revolution?", answer: "George Washington", image: "image/people/george_washington.jpg"},
-       {category: "People", number: 2, question: "Who was the longest-reigning monarch in British history, ruling for over 70 years?", answer: "Queen Elizabeth II", image: "image/people/elizabeth_2.jpg"},
-    {category: "People", number: 3, question: "Which British author wrote the famous book series about The Boy Who Lived?", answer: "J.K. Rowling", image: "image/people/jk_rowling.jpg"},
-    {category: "People", number: 4, question: "Which British poet and playwright wrote the saddest love stories in the world?", answer: "William Shakespeare", image: "image/people/shakespeare.jpg"}
-      ],
+    {category:"People", number:1, question:"Who was the first President of the United States and a key leader of the American Revolution?", answer:"George Washington", image:"image/people/george_washington.jpg"},
+    {category:"People", number:2, question:"Who was the longest-reigning monarch in British history, ruling for over 70 years?", answer:"Queen Elizabeth II", image:"image/people/elizabeth_2.jpg"},
+    {category:"People", number:3, question:"Which British author wrote the famous book series about The Boy Who Lived?", answer:"J.K. Rowling", image:"image/people/jk_rowling.jpg"},
+    {category:"People", number:4, question:"Which British poet and playwright wrote the saddest love stories in the world?", answer:"William Shakespeare", image:"image/people/shakespeare.jpg"}
+  ],
   // Books
   [
-    {category: "Books", number: 1, question: "Which epic fantasy novel tells the story of a magical ring and the fight against evil in Middle-earth?", answer: "The Lord of the Rings", image: "image/books/lotr.jpg"},
-    {category: "Books", number: 2, question: "Which famous tragic love story follows two young lovers whose families are enemies?", answer: "Romeo and Juliet", image: "image/books/romeo_juliet.jpg"},
-    {category: "Books", number: 3, question: "Which book series features a brilliant detective living at 221B Baker Street in London?", answer: "Sherlock Holmes", image: "image/books/sherlock.jpg"},
-    {category: "Books", number: 4, question: "Which horror novel tells the story of a shape-shifting creature that often appears as a clown?", answer: "It", image: "image/books/it.jpg"}
-    
+    {category:"Books", number:1, question:"Which epic fantasy novel tells the story of a magical ring and the fight against evil in Middle-earth?", answer:"The Lord of the Rings", image:"image/books/lotr.jpg"},
+    {category:"Books", number:2, question:"Which famous tragic love story follows two young lovers whose families are enemies?", answer:"Romeo and Juliet", image:"image/books/romeo_juliet.jpg"},
+    {category:"Books", number:3, question:"Which book series features a brilliant detective living at 221B Baker Street in London?", answer:"Sherlock Holmes", image:"image/books/sherlock.jpg"},
+    {category:"Books", number:4, question:"Which horror novel tells the story of a shape-shifting creature that often appears as a clown?", answer:"It", image:"image/books/it.jpg"}
   ],
   // Movies
   [
-    {category: "Movies", number: 1, question: "A young man and woman from different social classes meet and fall in love on a luxurious ship. Their love faces a terrible test when the ship hits an iceberg.<blockquote>I'm the king of the world!</blockquote>", answer: "Titanic", image: "image/movies/titanic.jpg"},
-    {category: "Movies", number: 2, question: "A grumpy green unusual main hero goes on an adventure to save a princess. Along the way, he meets a chattering donkey and discovers that appearances aren’t everything.<blockquote>Are we there yet? - No.<br>Are we there now? - Yes.<br>Honestly? - NO!!!</blockquote>", answer: "Shrek", image: "image/movies/shrek.jpg"},
-   
-    {category: "Movies", number: 3, question: "In a galaxy far, far away, a young hero joins a rebellion to fight an oppressive empire. The story features lightsabers, space battles, and the struggle between good and evil.<blockquote>Join the dark side</blockquote>", answer: "Star Wars", image: "image/movies/star_wars.jpg"},
-    
-    {category: "Movies", number: 4, question: "In a dystopian society, teenagers from different districts are forced to fight to the death on live television. A brave girl volunteers to save her sister and challenges the oppressive regime.<blockquote>Happy ... Games to you and may luck always be with you</blockquote>", answer: "The Hunger Games", image: "image/movies/hunger_games.jpg"}
+    {category:"Movies", number:1, question:"A young man and woman from different social classes meet and fall in love on a luxurious ship.<blockquote>I'm the king of the world!</blockquote>", answer:"Titanic", image:"image/movies/titanic.jpg"},
+    {category:"Movies", number:2, question:"A grumpy green unusual main hero goes on an adventure to save a princess.<blockquote>Are we there yet? - No.<br>Are we there now? - Yes.<br>Honestly? - NO!!!</blockquote>", answer:"Shrek", image:"image/movies/shrek.jpg"},
+    {category:"Movies", number:3, question:"In a galaxy far, far away, a young hero joins a rebellion to fight an oppressive empire.<blockquote>Join the dark side</blockquote>", answer:"Star Wars", image:"image/movies/star_wars.jpg"},
+    {category:"Movies", number:4, question:"Teenagers from different districts are forced to fight to the death on live television.<blockquote>Happy ... Games to you and may luck always be with you</blockquote>", answer:"The Hunger Games", image:"image/movies/hunger_games.jpg"}
   ],
-  // Landmarks (ранее Places)
+  // Sights / Places
   [
-    {category: "Places", number: 1, question: "This famous place in Los Angeles is known as the heart of the American film industry, where stars and movie studios are located.", answer: "Hollywood", image: "image/places/hollywood.jpg"},
-        {category: "Places", number: 2, question: "This colossal statue stands in New York and is a symbol of freedom and democracy. It welcomes visitors arriving by sea to a major American city.", answer: "Statue of Liberty", image: "image/places/statue_of_liberty.jpg"},
-    {category: "Places", number: 3, question: "This famous residence in Washington D.C. serves as the official home and workplace of the President of the United States.", answer: "The White House", image: "image/places/white_house.jpg"},
-    {category: "Places", number: 4, question: "This royal palace in London is the official residence of the British monarch. Visitors often gather outside to watch the changing of the guard.", answer: "Buckingham Palace", image: "image/places/buckingham_palace.jpg"}
-   
+    {category:"Places", number:1, question:"This famous place in Los Angeles is known as the heart of the American film industry.", answer:"Hollywood", image:"image/places/hollywood.jpg"},
+    {category:"Places", number:2, question:"This colossal statue stands in New York and is a symbol of freedom and democracy.", answer:"Statue of Liberty", image:"image/places/statue_of_liberty.jpg"},
+    {category:"Places", number:3, question:"This famous residence in Washington D.C. serves as the official home and workplace of the President.", answer:"The White House", image:"image/places/white_house.jpg"},
+    {category:"Places", number:4, question:"This royal palace in London is the official residence of the British monarch.", answer:"Buckingham Palace", image:"image/places/buckingham_palace.jpg"}
+  ],
+  // Music — добавь пути к аудиофайлам в поле `audio`
+  [
+    {category:"Music", number:1, question:"This British band is famous for combining rock music with powerful vocals and dramatic performances. Their most iconic song is often played at the end of major sports events around the world.", answer:"Queen", image:"image/music/queen.jpg", audio:"audio/queen.mp3"},
+    {category:"Music", number:2, question:"Which British band from Liverpool is known worldwide as the Fab Four?", answer:"The Beatles", image:"image/music/beatles.jpg", audio:"audio/beatles.mp3"},
+    {category:"Music", number:3, question:"What is the name of the legendary American singer known throughout the world simply as the King of Rock and Roll?", answer:"Elvis Presley", image:"image/music/elvis.jpg", audio:"audio/elvis.mp3"},
+    {category:"Music", number:4, question:"Which artist became famous worldwide thanks to his famous moonwalk?", answer:"Michael Jackson", image:"image/music/michael_jackson.jpg", audio:"audio/michael_jackson.mp3"}
   ]
 ];
 
-// Build grid
+// ====== BUILD GRID ======
 const grid = document.getElementById("grid");
 
 categories.forEach(cat => {
@@ -327,25 +387,58 @@ for (let i = 0; i < 4; i++) {
   categories.forEach((cat, ci) => {
     const q = document.createElement("div");
     q.className = "question";
-    q.innerHTML = `<span>${i+1}</span>`;
+    q.innerHTML = `<span>${i + 1}</span>`;
     q.onclick = () => openQuestion(q, questions[ci][i]);
     grid.appendChild(q);
   });
 }
 
-// Score
-function changeScore(team, delta){
-  const el = document.getElementById("score"+team);
+// ====== SCORE ======
+function changeScore(team, delta) {
+  const el = document.getElementById("score" + team);
   el.textContent = parseInt(el.textContent) + delta;
 }
 
-// Popup
+// ====== TIMER ======
 let timerInterval;
 let timeLeft = 45;
 
-function openQuestion(el, data){
-  if(el.classList.contains("used")) return;
+// ====== MUSIC ======
+const musicPlayer = document.getElementById("musicPlayer");
+let currentAudio = null;
+
+function toggleMusic() {
+  const btn = document.getElementById("playMusicBtn");
+  const label = document.getElementById("musicBtnLabel");
+
+  if (musicPlayer.paused) {
+    musicPlayer.play();
+    btn.classList.add("playing");
+    label.textContent = "Stop Music";
+  } else {
+    musicPlayer.pause();
+    musicPlayer.currentTime = 0;
+    btn.classList.remove("playing");
+    label.textContent = "Play Music";
+  }
+}
+
+function stopMusic() {
+  musicPlayer.pause();
+  musicPlayer.currentTime = 0;
+  const btn = document.getElementById("playMusicBtn");
+  const label = document.getElementById("musicBtnLabel");
+  if (btn) {
+    btn.classList.remove("playing");
+    label.textContent = "Play Music";
+  }
+}
+
+// ====== POPUP ======
+function openQuestion(el, data) {
+  if (el.classList.contains("used")) return;
   el.classList.add("used");
+
   document.getElementById("popupTitle").textContent = `${data.category} – Question ${data.number}`;
   document.getElementById("questionText").innerHTML = data.question;
   document.getElementById("answerText").innerHTML = data.answer;
@@ -353,24 +446,39 @@ function openQuestion(el, data){
   document.getElementById("answer").style.display = "none";
   document.getElementById("timer").textContent = "45";
   timeLeft = 45;
+
+  // Music button: show only for Music category
+  const playBtn = document.getElementById("playMusicBtn");
+  if (data.audio) {
+    musicPlayer.src = data.audio;
+    musicPlayer.load();
+    playBtn.style.display = "inline-flex";
+    playBtn.classList.remove("playing");
+    document.getElementById("musicBtnLabel").textContent = "Play Music";
+  } else {
+    playBtn.style.display = "none";
+    stopMusic();
+  }
+
   document.getElementById("popup").style.display = "flex";
 }
 
-function startTimer(){
+function startTimer() {
   clearInterval(timerInterval);
-  timerInterval = setInterval(()=>{
+  timerInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("timer").textContent = timeLeft;
-    if(timeLeft <= 0) clearInterval(timerInterval);
-  },1000);
+    if (timeLeft <= 0) clearInterval(timerInterval);
+  }, 1000);
 }
 
-function showAnswer(){
+function showAnswer() {
   document.getElementById("answer").style.display = "block";
 }
 
-function closePopup(){
+function closePopup() {
   clearInterval(timerInterval);
+  stopMusic();
   document.getElementById("popup").style.display = "none";
 }
 </script>
